@@ -1,0 +1,52 @@
+==============
+git link
+==============
+
+https://github.com/dilipsundarraj1/kafka-for-developers-using-spring-boot-v2/tree/main
+
+===================
+Kafka docker setup
+===================
+
+Refer this file
+
+https://github.com/dilipsundarraj1/kafka-for-developers-using-spring-boot-v2/blob/main/SetUpKafkaDocker.md#producer-and-consume-the-messages-with-key-and-value
+
+==================
+Consumer offsets are stored in an internal topic called __consumer_offset.
+
+Basically, consumer offset indicates how many msgs are read from a partition in a topic.
+
+Kafka message is written in a file in kafka. The location is mentioned by property
+log.dirs=/tmp/kafka-logs
+
+Kafka logs are stored in /var/lib/kafka/data
+
+cd /var/lib/kafka/data
+
+ls
+
+You will see 2 folders test-topic-0 and test-topic-1 as topic test-topic has 2 paritions.
+Go inside test-topic-0
+
+cd test-topic-0
+
+you will see files like
+
+0000000000.log
+0000000000.timeindex
+partitions.metadata
+leader-epoch-checkpoint
+
+Messages are persisted in log file.
+
+Retention policy determins how much time message will be stored.
+Default value is 168 hours (7 days).
+Its configured using log.retention.hours which is inside server.properties.
+
+This config file is present in
+/etc/kafka/server.properties
+
+cat /etc/kafka/server.properties
+
+log.retention.policy=168
