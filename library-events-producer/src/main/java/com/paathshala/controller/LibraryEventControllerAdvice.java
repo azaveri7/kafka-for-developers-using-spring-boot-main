@@ -1,4 +1,3 @@
-/*
 package com.paathshala.controller;
 
 
@@ -29,4 +28,3 @@ public class LibraryEventControllerAdvice {
         return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
     }
 }
-*/

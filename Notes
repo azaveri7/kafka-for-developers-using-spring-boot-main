@@ -1,0 +1,293 @@
+==============
+git link
+==============
+
+https://github.com/dilipsundarraj1/kafka-for-developers-using-spring-boot-v2/tree/main
+
+===================
+Kafka docker setup
+===================
+
+Refer this file
+
+https://github.com/dilipsundarraj1/kafka-for-developers-using-spring-boot-v2/blob/main/SetUpKafkaDocker.md#producer-and-consume-the-messages-with-key-and-value
+
+==================
+Consumer offsets are stored in an internal topic called __consumer_offset.
+
+Basically, consumer offset indicates how many msgs are read from a partition in a topic.
+
+Kafka message is written in a file in kafka. The location is mentioned by property
+log.dirs=/tmp/kafka-logs
+
+Kafka logs are stored in /var/lib/kafka/data
+
+cd /var/lib/kafka/data
+
+ls
+
+You will see 2 folders test-topic-0 and test-topic-1 as topic test-topic has 2 paritions.
+Go inside test-topic-0
+
+cd test-topic-0
+
+you will see files like
+
+0000000000.log
+0000000000.timeindex
+partitions.metadata
+leader-epoch-checkpoint
+
+Messages are persisted in log file.
+
+Retention policy determins how much time message will be stored.
+Default value is 168 hours (7 days).
+Its configured using log.retention.hours which is inside server.properties.
+
+This config file is present in
+/etc/kafka/server.properties
+
+cat /etc/kafka/server.properties
+
+log.retention.policy=168
+
+
+======================================
+
+When I ran docker-compose up, it created a kafka cluster with 1 broker.
+So the library-events-producer was failing as it was trying to create a topic
+with replication-factor=3.
+
+But num of brokers>=replication-factor
+
+Was getting below error.
+
+Caused by: org.apache.kafka.common.errors.InvalidReplicationFactorException:
+Replication factor: 3 larger than available brokers: 1.
+
+
+So I brought the multi-broker cluster up by using command
+
+docker-compose -f docker-compose-multi-broker.yml up
+
+--------------------------------------------------------------
+
+After docker-compose up, you should execute below commands
+
+docker-compose down
+
+##output:
+WARNING: Found orphan containers (kafka3, kafka2) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up.
+Removing kafka1 ... done
+Removing zoo1   ... done
+Removing network kafka-for-developers-using-spring-boot_default
+
+docker-compose down --remove-orphans
+
+##output:
+Removing orphan container "kafka2"
+Removing orphan container "kafka3"
+Removing network kafka-for-developers-using-spring-boot_default
+WARNING: Network kafka-for-developers-using-spring-boot_default not found.
+
+--------------------------------------------------------------
+
+In multi kafka broker cluster system, to fire
+kafka commands, you can use any one broker and
+that broker takes care of connecting to other
+kafka brokers in the cluster and bring the info.
+
+## To list all the topics in the kafka cluster
+
+docker exec --interactive --tty kafka1  \
+kafka-topics --bootstrap-server kafka1:19092 --list
+
+## To describe topic
+
+docker exec --interactive --tty kafka1  \
+kafka-topics --bootstrap-server kafka1:19092 --describe
+
+Topic: library-events	TopicId: GAX97lagRmOOejABxFZ3qg	PartitionCount: 3	ReplicationFactor: 3	Configs:
+	Topic: library-events	Partition: 0	Leader: 3	Replicas: 3,1,2Isr: 3,1,2
+	Topic: library-events	Partition: 1	Leader: 1	Replicas: 1,2,3Isr: 1,2,3
+	Topic: library-events	Partition: 2	Leader: 2	Replicas: 2,3,1Isr: 2,3,1
+
+-----------------------------------------------------------------
+Curl command to test our REST API POST operation
+
+POST WITH-NULL-LIBRARY-EVENT-ID
+---------------------
+curl -i \
+-d '{"libraryEventId":null,"libraryEventType": "NEW","book":{"bookId":456,"bookName":"Kafka Tutorials by Paathshala","bookAuthor":"Anand Zaveri"}}' \
+-H "Content-Type: application/json" \
+-X POST http://localhost:8080/v1/libraryevent
+
+
+--------------------------------------------------------------------
+
+Kafka command to consume messages for library-events topic
+
+docker exec --interactive --tty kafka1  \
+kafka-console-consumer --bootstrap-server kafka1:19092 \
+                       --topic library-events \
+                       --from-beginning
+
+
+-------------------------------------------------------------------
+
+To separate integration tests from unit tests, add following line in
+build.gradle
+
+sourceSets{
+	test {
+		java.srcDirs = ['src/test/java/unit', 'src/test/java/intg']
+	}
+}
+
+Then click on the Refresh button in build.gradle file
+
+Then you need to manually create intg and unit folder inside test/java
+and test cases files for them.
+
+In case of Integration tests, create
+- LibraryEventsControllerIntegrationTest
+- LibraryEventsControllerIntegrationTestApproach2
+
+and in case of unit tests, create 3 folders
+- controller
+  - LibraryEventControllerUnitTest
+- producer
+  - LibraryEventProducerUnitTest
+- util
+  - TestUtil
+
+
+-----------------------------------------------
+
+In the unit test case, it was failing due to below error:
+
+2024-04-22T10:28:45.381+05:30  WARN 10660 --- [    Test worker] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.bind.MethodArgumentNotValidException: Validation failed for argument [0] in public org.springframework.http.ResponseEntity<?> com.paathshala.controller.LibraryEventsController.postLibraryEvent(com.paathshala.domain.LibraryEvent) throws com.fasterxml.jackson.core.JsonProcessingException with 2 errors: [Field error in object 'libraryEvent' on field 'book.bookName': rejected value []; codes
+[NotBlank.libraryEvent.book.bookName,NotBlank.book.bookName,NotBlank.bookName,
+NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable:
+codes [libraryEvent.book.bookName,book.bookName]; arguments []; default message [book.bookName]];
+default message [must not be blank]] [Field error in object 'libraryEvent' on field 'book.bookId':
+rejected value [null]; codes [NotNull.libraryEvent.book.bookId,NotNull.book.bookId,NotNull.bookId,
+NotNull.java.lang.Integer,NotNull]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable:
+codes [libraryEvent.book.bookId,book.bookId]; arguments []; default message [book.bookId]];
+default message [must not be null]] ]
+
+So wrote a below Spring advice class
+
+package com.paathshala.controller;
+
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@ControllerAdvice
+@Slf4j
+public class LibraryEventControllerAdvice {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleRequestBody(MethodArgumentNotValidException ex) {
+
+        List<FieldError> errorList = ex.getBindingResult().getFieldErrors();
+        String errorMessage = errorList.stream()
+                .map(fieldError -> fieldError.getField() + " - " + fieldError.getDefaultMessage())
+                .sorted()
+                .collect(Collectors.joining(", "));
+        log.info("errorMessage : {} ", errorMessage);
+        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+}
+
+
+Now the error message is converted to
+
+2024-04-22T10:31:00.930+05:30  INFO 10963 --- [    Test worker]
+c.p.c.LibraryEventControllerAdvice       :
+errorMessage : book.bookId - must not be null, book.bookName - must not be blank
+
+----------------------------------------------------------------------------------------
+
+=====
+acks
+=====
+
+acks = 1        -> guarantees message is written to a leader.
+acks = -1 (all) -> guarantees message is written to a leader and to all the replicas.
+                   Default mode
+
+acks = 0 -> no guarantee (not recommended)
+
+----------------------------------------------------------------------------------------
+=======
+retries
+=======
+
+In Spring kafka, default value is -> 2147483647
+
+=================
+retry.backoff.ms
+=================
+default value is 100 ms
+
+----------------------------------------------------------------------------------------
+
+application.yml file entries to override above properties
+
+properties:
+  acks: all
+  retries: 10
+  retry.backoff.ms: 1000
+
+
+------------------------------
+
+###########################
+to run multiple consumers
+###########################
+
+./gradlew build
+
+So the jar file is created
+
+java -jar build/libs/library-events-consumer-0.0.1-SNAPSHOT.jar
+
+2024-04-23T20:16:16.512+05:30  INFO 27868 --- [ntainer#0-0-C-1] o.s.k.l.KafkaMessageListenerContainer    :
+library-events-listener-group: partitions assigned: [library-events-0, library-events-1, library-events-2]
+
+As we can see from microservice logs, all the 3 partitions are assigned to this consumer.
+
+Lets bring one more consumer.
+
+java -jar -Dserver.port=8082 build/libs/library-events-consumer-0.0.1-SNAPSHOT.jar
+
+Logs for consumer 2:
+
+2024-04-23T20:18:04.848+05:30  INFO 28117 --- [ntainer#0-0-C-1] o.s.k.l.KafkaMessageListenerContainer    :
+library-events-listener-group: partitions assigned: [library-events-2]
+
+Partition 2 is now assigned to consumer 2
+
+Logs for consumer 1:
+
+2024-04-23T20:20:22.828+05:30  INFO 27868 --- [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  :
+[Consumer clientId=consumer-library-events-listener-group-1, groupId=library-events-listener-group]
+Notifying assignor about the new Assignment(partitions=[library-events-0, library-events-1])
+
+2024-04-23T20:20:22.828+05:30  INFO 27868 --- [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  :
+
+[Consumer clientId=consumer-library-events-listener-group-1, groupId=library-events-listener-group]
+Adding newly assigned partitions: library-events-0, library-events-1
+
+2024-04-23T20:20:22.839+05:30  INFO 27868 --- [ntainer#0-0-C-1] o.s.k.l.KafkaMessageListenerContainer    :
+library-events-listener-group: partitions assigned: [library-events-0, library-events-1]

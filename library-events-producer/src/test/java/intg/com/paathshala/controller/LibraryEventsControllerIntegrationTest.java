@@ -2,7 +2,7 @@ package com.paathshala.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paathshala.domain.LibraryEvent;
-import com.paathshala.util.TestUtil;
+import util.TestUtil;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -20,7 +20,6 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.TestPropertySource;
-import scala.Int;
 
 import java.util.HashMap;
 
