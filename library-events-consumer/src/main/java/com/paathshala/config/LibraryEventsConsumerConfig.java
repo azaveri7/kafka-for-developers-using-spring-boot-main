@@ -19,6 +19,7 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
@@ -27,6 +28,22 @@ import org.springframework.util.backoff.FixedBackOff;
 import java.util.List;
 
 @Configuration
-//@EnableKafka
+@EnableKafka
 public class LibraryEventsConsumerConfig {
+
+    @Bean
+    ConcurrentKafkaListenerContainerFactory<?, ?> kafkaListenerContainerFactory(
+            ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
+            ConsumerFactory<Object, Object> kafkaConsumerFactory) {
+        ConcurrentKafkaListenerContainerFactory<Object, Object> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+       /* configurer.configure(factory, kafkaConsumerFactory
+                .getIfAvailable(() ->
+                        new DefaultKafkaConsumerFactory<>(this.kafkaProperties.buildConsumerProperties())));*/
+        //factory.setConcurrency(3);
+        //factory.setCommonErrorHandler(errorHandler());
+        configurer.configure(factory, kafkaConsumerFactory);
+        //factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        return factory;
+    }
 }

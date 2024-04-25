@@ -291,3 +291,35 @@ Adding newly assigned partitions: library-events-0, library-events-1
 
 2024-04-23T20:20:22.839+05:30  INFO 27868 --- [ntainer#0-0-C-1] o.s.k.l.KafkaMessageListenerContainer    :
 library-events-listener-group: partitions assigned: [library-events-0, library-events-1]
+
+----------------------------------------------------------------------------
+
+ConcurrentKafkaListenerContainerFactory<Object, Object> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+
+factory.setConcurrency(3);
+
+If we do not have any kubernetes like environment, you can use the concurrency level,
+whose value should be equal to number of partitions in the topic.
+
+It will spawn 3 threads with same consumer code.
+
+In the spring boot application, kafka consumer runs as a separate thread.
+
+2024-04-24T20:29:09.988+05:30  INFO 16856 --- [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  :
+[Consumer clientId=consumer-library-events-listener-group-1, groupId=library-events-listener-group]
+Setting offset for partition library-events-2 to the committed offset FetchPosition{offset=2,
+offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[127.0.0.1:9094 (id: 3 rack: null)], epoch=0}}
+
+C-1 indicates thread one.
+
+After doing factory.setConcurrency(3),
+
+2024-04-24T20:30:46.101+05:30  INFO 17140 --- [ntainer#0-1-C-1]
+o.s.k.l.KafkaMessageListenerContainer    : library-events-listener-group: partitions assigned: [library-events-1]
+2024-04-24T20:30:46.101+05:30  INFO 17140 --- [ntainer#0-0-C-1]
+o.s.k.l.KafkaMessageListenerContainer    : library-events-listener-group: partitions assigned: [library-events-0]
+2024-04-24T20:30:46.201+05:30  INFO 17140 --- [ntainer#0-2-C-1]
+o.s.k.l.KafkaMessageListenerContainer    : library-events-listener-group: partitions assigned: [library-events-2]
+
+we see 3 threads 1-C, 0-C and 2-C
