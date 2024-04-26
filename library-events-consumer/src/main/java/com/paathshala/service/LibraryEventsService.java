@@ -55,7 +55,8 @@ public class LibraryEventsService {
             throw new IllegalArgumentException("Library Event Id is missing");
         }
 
-        Optional<LibraryEvent> libraryEventOptional = libraryEventsRepository.findById(libraryEvent.getLibraryEventId());
+        Optional<LibraryEvent> libraryEventOptional =
+                libraryEventsRepository.findById(libraryEvent.getLibraryEventId());
         if(!libraryEventOptional.isPresent()){
             throw new IllegalArgumentException("Not a valid library Event");
         }

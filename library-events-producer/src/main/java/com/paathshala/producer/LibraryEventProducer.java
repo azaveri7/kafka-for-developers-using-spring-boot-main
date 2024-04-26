@@ -156,6 +156,8 @@ public class LibraryEventProducer {
         String value = objectMapper.writeValueAsString(libraryEvent);
 
         ProducerRecord<Integer, String> producerRecord = buildProducerRecord(key, value, topic);
+        // 1. blocking call - get metadata about the kafka cluster => max.block.ms
+        // 2. send message happens - returns a completable future => min.in.sync.replicas
         var completableFuture = kafkaTemplate.send(producerRecord);
         return completableFuture
                 .whenComplete((sendResult, throwable) -> {

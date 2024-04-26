@@ -323,3 +323,45 @@ o.s.k.l.KafkaMessageListenerContainer    : library-events-listener-group: partit
 o.s.k.l.KafkaMessageListenerContainer    : library-events-listener-group: partitions assigned: [library-events-2]
 
 we see 3 threads 1-C, 0-C and 2-C
+
+
+============================================================================
+You cannot use Records (Java) as Entity beans (for hibernate)
+because Record classes are immatuable.
+
+However, we might need to update a field in entity bean, hence
+entity beans need to be created as Java classes.
+
+Records can be used when we want to use them as container objects only.
+============================================================================
+
+To delete kafka consumer process (as it runs separately from main thread
+running spring boot application), we need to use command
+
+jps
+
+this gives us all java processes with Process ID values.
+
+Then use command
+
+kill -9 <PID>
+
+================================================================================
+
+In integration tests for Kafka,
+
+if we are writing integrating tests for consumer, we need to mock response from
+producer and if we are writing it for producer, we need to mock response from
+consumer.
+
+================================================================================
+
+SSL setup steps:
+
+1. Generate server.keystore.jks
+2. SetUp Local Certificate Authority
+3. Create CSR (Certificate Signing Request)
+4. Sign the SSL certificate.
+5. Add the signed SSL certificate to server.keystore file
+6. Configure the SSL cert in our Kafka broker
+7. Create client.truststore.jks for the client
