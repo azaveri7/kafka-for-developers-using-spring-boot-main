@@ -365,3 +365,46 @@ SSL setup steps:
 5. Add the signed SSL certificate to server.keystore file
 6. Configure the SSL cert in our Kafka broker
 7. Create client.truststore.jks for the client
+
+================================================================================
+
+Go to Readme.md file and click on Securing your Kafka Cluster using SSL
+
+It re-directs to git hub link:
+
+https://github.com/dilipsundarraj1/kafka-cluster-ssl
+
+In its docker compose file, you can see the SSL conifguration
+
+KAFKA_ADVERTISED_LISTENERS: SSL://localhost:9092
+KAFKA_SSL_KEYSTORE_FILENAME: kafka.kafka1.keystore.jks
+KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka1_keystore_creds
+KAFKA_SSL_KEY_CREDENTIALS: kafka1_sslkey_creds
+KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.kafka1.truststore.jks
+KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka1_truststore_creds
+KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+
+In the kafka producer application, we have copied application-ssl.yml
+file and the profile name is ssl.
+
+So when you start the producer application, give the environemnt variable
+as
+spring.profiles.active=ssl
+
+This will pick the ssl configuration from yml file.
+
+In the AutoCreateConfig.java file, it was trying to create a topic
+with 3 partitions. So to prevent this file from creating topic,
+we wrote this annotation
+
+@Profile("local")
+
+So this file gets executed only when spring profile is local.
+
+SSL configuration for kakfa consumer:
+
+Create application-ssl.yml file in consumer application and
+also use
+spring.profiles.active=ssl
+
+So ssl is also configured in consumer application
